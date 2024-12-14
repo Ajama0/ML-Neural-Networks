@@ -72,22 +72,63 @@ if REBUILD_DATA:
 with open("training_data.pkl", "rb") as f:
     training_data = pickle.load(f)
 print(len(training_data))
-print(training_data[0])
+#print(training_data[0])
 
-plt.imshow(training_data[2][0], cmap="gray") #make sure you access the matrix(image) alone and not the one hot included
-plt.show()
-
-
+#plt.imshow(training_data[2][0], cmap="gray") #make sure you access the matrix(image) alone and not the one hot included
+#plt.show()
 
 
 
-class Model(nn.module):
+
+
+class Net(nn.Module):
 
     def __init__(self):
-        super.__init__()
+        super().__init__()
         self.conv1 = nn.Conv2d(1,32,5) #1-in channels (no rgb hence 1), 32-feature maps, 5-kernel size
-        self.conv2 = nn.Conv2d(1,32,5)
-        self.conv3 = nn.Conv2d(1,32,5)
+        self.conv2 = nn.Conv2d(32,64,5)
+        self.conv3 = nn.Conv2d(64,128,5) #we must flatten the 128 feature maps for us to use it in a FCNN last layer
+        #pooling layer
+        self.pool1 = nn.MaxPool2d((2,2))
+        self.pool2 = nn.MaxPool2d((2,2))
+        self.pool3 = nn.MaxPool2d((2,2))
+
+        self.fc1 = nn.Linear(512, 512)
+        self.fc2 = nn.Linear(512,2)
+
+
+    
+
+    
+
+
+    def forward(self, x):
+        #the conv1 returns an object with state defined as the parameters of filters and kernal size
+        #automatically pytorch calls forward method of nn.module whenever a value is passed to it
+        #its like you writing (instance of Model)output = self.conv1.forward(x) 
+        #conv1 is is an instance of conv2d and conv1(x) calls the forward method of conv2d class
+        x = F.relu(self.conv1(x)) #returns a feature map for each filter
+        x = self.pool1(x) #apply a pooling layer of 2x2 on each feature map to reduce dimensions
+        x = F.relu(self.conv2(x))
+        x = self.pool2(x)
+        x = F.relu(self.conv3(x))
+        x = self.pool3(x)
+        #the last layer before passig it to a fcnn
+        #it contains many feature sets which need to be flattend to match the linear layer
+        #flatten the feature sets into a 1d vector
+        x = x.flatten(start_dim = 1) #flatten the shape, as we pass in a dummy value, and see what the shape is at that current point for the dimensions that are the same as the intitial input
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+
+        return F.log_softmax(x,dim=1)
+    
+
+net = Net()
+
+x = torch.rand(1,1,50,50) #the dummy returned to us a shape of [1,512] so we know the input neurons after the conv3d is a 1d vector with 512 neurons
+print(net(x))
+
+
 
 
     

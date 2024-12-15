@@ -53,6 +53,7 @@ for epochs in range(EPOCHS):
     #Loop through data in train data
     for data in train_data:
     #data represents a batch of samples(images) and labels for each sample
+    #for every batch and label, unpack it
      #x, y = the feature sets, and labels. so we unpack that here
         X, y = data
         net.zero_grad() # reo

@@ -8,6 +8,7 @@ import torch
 import torchvision
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 
 REBUILD_DATA = False
 
@@ -113,20 +114,77 @@ class Net(nn.Module):
         x = self.pool2(x)
         x = F.relu(self.conv3(x))
         x = self.pool3(x)
+        #print(x.shape)
         #the last layer before passig it to a fcnn
         #it contains many feature sets which need to be flattend to match the linear layer
         #flatten the feature sets into a 1d vector
         x = x.flatten(start_dim = 1) #flatten the shape, as we pass in a dummy value, and see what the shape is at that current point for the dimensions that are the same as the intitial input
+        #print(x.shape)#print the shape before passing it to the FCNN. so that when we call fc1(x) we know what input it receives so that it can create the corresponding weight matrix
         x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
+        x = self.fc2(x) #last layer will only consist of a softmax activation and not an activation value
 
-        return F.log_softmax(x,dim=1)
+        return F.softmax(x,dim=1) # apply softmax to the batch, but dim = 1 refers to each sample vector at a time
     
-
+#global object
 net = Net()
 
-x = torch.rand(1,1,50,50) #the dummy returned to us a shape of [1,512] so we know the input neurons after the conv3d is a 1d vector with 512 neurons
-print(net(x))
+#x = torch.rand(1,1,50,50) #the dummy returned to us a shape of [1,512] so we know the input neurons after the conv3d is a 1d vector with 512 neurons
+#print(net(x))
+
+
+
+
+optimizer = optim.Adam(net.parameters(), lr = 0.001)
+loss_function = nn.MSELoss()
+
+
+#iterate through the training data, and return the image matrix, [0] referes to the the first element in the lol containing sample matrix and label,
+#reshape it into the dimesnions and apply torch.tensor to perform operations on them
+X = torch.tensor(np.array([i[0] for i in training_data]),dtype=torch.float32).view(-1,50,50)
+print(X.shape)
+X = X/255.0 #divide pixels by 255 to be range [0,1]. we normalize pixels to reduce computations when doing convolutions
+y = torch.tensor(np.array([i[1] for i in training_data]),dtype=torch.float32) #create a new list of labels for every sample
+
+#define train and test test
+valid_pct = 0.1 #10% of the data will be used for test
+val_size = int(len(X)*valid_pct) #will return 2494
+
+train_x =X[:-val_size]#iterate through training data and stop before the last 2494 samples
+print("new training data after dividing from test set", len(train_x))
+train_y = y[:-val_size]
+
+
+test_x = X[-val_size:] #iterate the last 2494 images
+test_y = y[-val_size:]
+
+BATCH_SIZE = 100
+EPOCHS = 1
+
+for epochs in range(EPOCHS):
+    #iterate through the train data in a step size of the batches
+    for i in tqdm(range(0, len(train_x), BATCH_SIZE)):
+        #iterate until end of trainset, collecting a batch of 100 samples. each iter is a 100 samples
+        batch_x = train_x[i:i+BATCH_SIZE].view(-1,1,50,50)
+        batch_y = train_y[i:i+BATCH_SIZE]
+
+
+        net.zero_grad() #for each batch the gradient is reset
+
+        output = net(batch_x)
+        loss = loss_function(output, batch_y)
+        loss.backward()
+        optimizer.step()
+
+print("here")
+
+Correct = 0
+Total = 0
+
+
+with torch.no_grad:
+    
+
+
 
 
 

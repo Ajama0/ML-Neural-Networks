@@ -160,13 +160,19 @@ test_y = y[-val_size:]
 BATCH_SIZE = 100
 EPOCHS = 1
 
+
 for epochs in range(EPOCHS):
     #iterate through the train data in a step size of the batches
     for i in tqdm(range(0, len(train_x), BATCH_SIZE)):
         #iterate until end of trainset, collecting a batch of 100 samples. each iter is a 100 samples
         batch_x = train_x[i:i+BATCH_SIZE].view(-1,1,50,50)
-        batch_y = train_y[i:i+BATCH_SIZE]
+        batch_y = test_y[i:i+BATCH_SIZE]
 
+        #skip any batches that dont have sizes
+        if batch_x.size(0) != batch_y.size(0):
+            continue
+
+        
 
         net.zero_grad() #for each batch the gradient is reset
 
@@ -175,14 +181,38 @@ for epochs in range(EPOCHS):
         loss.backward()
         optimizer.step()
 
-print("here")
-
-Correct = 0
-Total = 0
+print(loss)
 
 
-with torch.no_grad:
-    
+correct = 0
+total = 0
+
+
+with torch.no_grad():
+    #test the models accuracy on the test set, with our updated weights
+    for i in tqdm(range(0, len(test_x), BATCH_SIZE)):
+        Batchtest_x = test_x[i:i+BATCH_SIZE].view(-1,1,50,50)
+        Batchtest_y = test_y[i:i+BATCH_SIZE]
+
+        output = net(Batchtest_x)
+
+        for idx, i in enumerate(output):
+            #for every prediction, for that index get the one hot index for that sample
+            #essentially saying the for example the first sample correct output is the 2nd class (index 1 hot)
+            real_class = torch.argmax(Batchtest_y[idx])
+            real_value = torch.argmax(i)  #returns the index of predicted value, so could be 1
+            if real_class == real_value :
+                #if the index of the correct prediction and true label are equal
+                correct+=1
+            total+=1    
+
+print("Accuracy", round(correct/total,3)) #percentage of how accurate the model is to new data     
+
+
+        
+
+
+
 
 
 

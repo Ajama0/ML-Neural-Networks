@@ -166,14 +166,11 @@ for epochs in range(EPOCHS):
     for i in tqdm(range(0, len(train_x), BATCH_SIZE)):
         #iterate until end of trainset, collecting a batch of 100 samples. each iter is a 100 samples
         batch_x = train_x[i:i+BATCH_SIZE].view(-1,1,50,50)
-        batch_y = test_y[i:i+BATCH_SIZE]
-
-        #skip any batches that dont have sizes
-        if batch_x.size(0) != batch_y.size(0):
-            continue
+        batch_y = train_y[i:i+BATCH_SIZE]
 
         
 
+    
         net.zero_grad() #for each batch the gradient is reset
 
         output = net(batch_x)

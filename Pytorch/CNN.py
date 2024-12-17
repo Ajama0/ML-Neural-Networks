@@ -97,12 +97,6 @@ class Net(nn.Module):
         self.fc1 = nn.Linear(512, 512)
         self.fc2 = nn.Linear(512,2)
 
-
-    
-
-    
-
-
     def forward(self, x):
         #the conv1 returns an object with state defined as the parameters of filters and kernal size
         #automatically pytorch calls forward method of nn.module whenever a value is passed to it
@@ -125,6 +119,8 @@ class Net(nn.Module):
 
         return F.softmax(x,dim=1) # apply softmax to the batch, but dim = 1 refers to each sample vector at a time
     
+
+
 #global object
 net = Net()
 
@@ -157,6 +153,103 @@ train_y = y[:-val_size]
 test_x = X[-val_size:] #iterate the last 2494 images
 test_y = y[-val_size:]
 
+
+
+  #this function is used to train and test data as a single function
+def fwd_pass(X, y, train = False):
+    if train:
+        net.zero_grad()
+
+    outputs = net(X)    
+    #we want to be able to calculate accuracy at any given point
+    matches = [torch.argmax(i)==torch.argmax(j)for i, j in zip(outputs,y)]
+
+    """ #same logic as above
+        matches = []
+        for idx, i in enumerate(outputs):
+            if(torch.argmax(i)==torch.argmax(y[idx])):
+                matches.append(True)
+        """  
+        #how many true values are in our matches list out of the total
+    accuracy = matches.count(True)/len(matches)
+    loss = loss_function(outputs, y)
+
+    if train:
+        loss.backward()
+        optimizer.step()
+
+    return accuracy, loss 
+
+
+
+
+def test(size = 32):
+    
+    #so for the 2494 samples we have,  collect a batch of 32 samples, starting from a random point
+
+    random_sample = np.random.randint(len(test_x)-size)
+    with torch.no_grad():
+        X, y = test_x[random_sample:random_sample + size], test_y[random_sample:random_sample+size]
+        val_acc, val_test = fwd_pass(X.view(-1,1,50,50), y, train = False)
+
+    return val_acc, val_test
+
+print(test(32))
+
+
+def train():
+    BATCH_SIZE = 32
+    EPOCHS = 3
+
+    for i in range(EPOCHS):
+        for i in tqdm(range(0, len(train_x), BATCH_SIZE)):
+            X = train_x[i : i+BATCH_SIZE].view(-1,1,50,50)
+            y = train_y[i:i+BATCH_SIZE]
+
+            acc, loss = fwd_pass(X, y, train= True)
+
+        #for every epoch will print the accuracy and loss for the last batch
+        return acc, loss
+    
+
+print(train())    
+
+        
+
+
+
+
+
+
+
+
+
+
+    
+
+            
+
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+""""
 BATCH_SIZE = 100
 EPOCHS = 1
 
@@ -204,7 +297,7 @@ with torch.no_grad():
             total+=1    
 
 print("Accuracy", round(correct/total,3)) #percentage of how accurate the model is to new data     
-
+"""
 
         
 

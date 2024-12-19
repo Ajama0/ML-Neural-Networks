@@ -201,6 +201,8 @@ def train():
     BATCH_SIZE = 32
     EPOCHS = 3
 
+    results = []
+
     for i in range(EPOCHS):
         for i in tqdm(range(0, len(train_x), BATCH_SIZE)):
             X = train_x[i : i+BATCH_SIZE].view(-1,1,50,50)
@@ -208,8 +210,14 @@ def train():
 
             acc, loss = fwd_pass(X, y, train= True)
 
+
+        results.append((acc,loss)) #collect the accuracy and loss for in sample data of the last batch per epoch
+
+    return results
+
+        
         #for every epoch will print the accuracy and loss for the last batch
-        return acc, loss
+    
     
 
 print(train())    
